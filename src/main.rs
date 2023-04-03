@@ -103,5 +103,6 @@ fn main() {
             }
         }
     }
+    std::fs::remove_file("download.xlsx").unwrap();
 }
 
