@@ -51,12 +51,13 @@ fn form(row: &[DataType]) {
             } else {
                 r
             };
-            let a = row[a * 3 + 2].to_string();
-            let sp = a.split("/").collect::<Vec<_>>();
+            let t = row[a * 3 + 2].to_string();
+            let sp = t.split("/").collect::<Vec<_>>();
 
             // println!("{:?}", time.bytes());
             // println!("{:?}", room.bytes());
             if sp.len() == 2 {
+                print!("[{}] -> ", a + 1);
                 println!("{} -> {} / {}\n\t{}\n", time.trim(), room.trim(), sp[1].trim(), sp[0].trim());
             }
         }
@@ -93,7 +94,7 @@ fn main() {
                         println!("{}", group);
                         let r = &row[1..];
                         // dbg!(row.len());
-                        if r.len() != 18 {
+                        if r.len() % 3 != 0 {
                             raw(&row[1..]);
                         } else {
                             form(&row[1..]);
