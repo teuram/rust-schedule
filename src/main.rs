@@ -1,31 +1,29 @@
 
-use std::io::prelude::*;
+use std::io::BufReader;
 use calamine::{
     DataType,
     Reader,
     Xlsx,
-    open_workbook
+    open_workbook_from_rs,
 };
 use curl::easy::Easy;
 
 static LINK: &str = "https://cloud.nntc.nnov.ru/index.php/s/S5cCa8MWSfyPiqx/download";
 
-fn download() {
+fn download() -> Vec<u8> {
     let mut easy = Easy::new();
     easy.url(LINK).unwrap();
-
-    if std::path::Path::new("./download.xlsx").exists() {
-        return;
-    }
-
-    let mut output = std::fs::File::create("download.xlsx").unwrap();
+    let mut dst = Vec::new();
 
     let mut transfer = easy.transfer();
     transfer.write_function(|data| {
-        output.write(data).unwrap();
+        dst.extend_from_slice(data);
         Ok(data.len())
     }).unwrap();
     transfer.perform().unwrap();
+    drop(transfer);
+
+    dst
 }
 
 fn raw(row: &[DataType]) {
@@ -65,7 +63,9 @@ fn form(row: &[DataType]) {
 }
 
 fn main() {
-    download();
+    let down = std::io::Cursor::new(download());
+
+    let reader = BufReader::new(down);
 
     let show_groups = ["3РПУ-20-1", "23-1МРПс"];
 
@@ -79,7 +79,7 @@ fn main() {
     // https://doc.rust-lang.org/std/time/index.html
     // add speed
 
-    let mut excel: Xlsx<_> = open_workbook("download.xlsx").unwrap();
+    let mut excel: Xlsx<_> = open_workbook_from_rs(reader).unwrap();
     for i in excel.worksheets() {
 
         if let Some(Ok(r)) = excel.worksheet_range(i.0.as_str()) {
@@ -104,6 +104,5 @@ fn main() {
             }
         }
     }
-    std::fs::remove_file("download.xlsx").unwrap();
 }
 
