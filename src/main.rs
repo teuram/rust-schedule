@@ -107,6 +107,7 @@ fn main() {
                 }
                 for group in show_groups.iter() {
                     if row[0].to_string().trim() == group.as_str() {
+                        println!("[{}]", row[0]);
                         let r = &row[1..];
                         // dbg!(row.len());
                         if r.len() % 3 != 0 {
