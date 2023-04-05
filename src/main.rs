@@ -86,7 +86,7 @@ fn main() {
             let rows = r.rows();
             // dbg!(rows.len());
             for row in rows {
-                if row[0].to_string().trim().contains("Расписание занятий на ") {
+                if row[0].to_string().trim().contains("Расписание занятий на") {
                     println!("\n{}", row[0]);
                 }
                 for group in show_groups {
