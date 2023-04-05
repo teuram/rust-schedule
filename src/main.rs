@@ -8,6 +8,20 @@ use calamine::{
 };
 use curl::easy::Easy;
 
+use clap::Parser;
+
+/// Simple program to greet a person
+#[derive(Parser, Debug)]
+#[command()]
+struct Args {
+    #[arg(short)]
+    list: bool,
+
+    #[arg(value_name = "GROUP")]
+    show: Vec<String>,
+}
+
+
 static LINK: &str = "https://cloud.nntc.nnov.ru/index.php/s/S5cCa8MWSfyPiqx/download";
 
 fn download() -> Vec<u8> {
@@ -67,7 +81,9 @@ fn main() {
 
     let reader = BufReader::new(down);
 
-    let show_groups = ["3РПУ-20-1", "23-1МРПс"];
+    let args = Args::parse();
+
+    let show_groups = args.show;
 
     let time = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -89,9 +105,8 @@ fn main() {
                 if row[0].to_string().trim().contains("Расписание занятий на") {
                     println!("\n{}", row[0]);
                 }
-                for group in show_groups {
-                    if row[0].to_string().trim() == group {
-                        println!("{}", group);
+                for group in show_groups.iter() {
+                    if row[0].to_string().trim() == group.as_str() {
                         let r = &row[1..];
                         // dbg!(row.len());
                         if r.len() % 3 != 0 {
