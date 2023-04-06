@@ -1,7 +1,13 @@
 [package]
 name = "dump-schedule"
-version = "0.2.0"
+version = "0.3.0"
+readme = "README.md"
 edition = "2021"
+license-file = "LICENSE"
+categories = ["command-line-utilities"]
+authors = ["vivod.pop@gmail.com"]
+description = "Parser for nrtc couple schedules written in rust"
+repository = "https://github.com/teuram/rust-schedule"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -16,4 +22,5 @@ opt-level = 'z'
 lto = true
 codegen-units = 1
 strip = true
+
 
