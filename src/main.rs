@@ -8,17 +8,14 @@ use calamine::{
     open_workbook_from_rs,
 };
 use curl::easy::Easy;
-
 use clap::Parser;
 
-/// Simple program to greet a person
 #[derive(Parser, Debug)]
 #[command()]
 struct Args {
     #[arg(value_name = "GROUPS")]
     groups: Vec<String>,
 }
-
 
 static LINK: &str = "https://cloud.nntc.nnov.ru/index.php/s/S5cCa8MWSfyPiqx/download";
 
@@ -39,7 +36,7 @@ fn get_table() -> Vec<u8> {
 }
 
 fn raw(row: &[DataType]) {
-    eprintln!("RAW");
+    eprintln!("warning: table parsing is not possible, emit raw format");
     for a in row {
         println!("{}", a);
     }
@@ -75,8 +72,19 @@ fn form(row: &[DataType]) {
 }
 
 fn show_list_groups(rows: Rows<DataType>) {
+    let mut groups = std::collections::HashMap::<String, u8>::new();
     for row in rows {
-
+        let s = row[0].to_string();
+        if s.chars().count() < 16 {
+            if s.chars().count() > 2 {
+                if s != "Группа" {
+                    groups.insert(row[0].to_string(), 0);
+                }
+            }
+        }
+    }
+    for g in groups.into_keys() {
+        println!("{}", g);
     }
 }
 
@@ -119,7 +127,7 @@ fn main() {
         if let Some(Ok(r)) = excel.worksheet_range(i.0.as_str()) {
             let rows = r.rows();
             // dbg!(rows.len());
-            if args.groups.len() == 0 {
+            if args.groups.is_empty() {
                 show_list_groups(rows);
             } else {
                 show_groups(rows, &args.groups);
