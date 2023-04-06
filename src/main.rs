@@ -3,6 +3,7 @@ use std::io::BufReader;
 use calamine::{
     DataType,
     Reader,
+    Rows,
     Xlsx,
     open_workbook_from_rs,
 };
@@ -14,17 +15,14 @@ use clap::Parser;
 #[derive(Parser, Debug)]
 #[command()]
 struct Args {
-    #[arg(short)]
-    list: bool,
-
-    #[arg(value_name = "GROUP")]
-    show: Vec<String>,
+    #[arg(value_name = "GROUPS")]
+    groups: Vec<String>,
 }
 
 
 static LINK: &str = "https://cloud.nntc.nnov.ru/index.php/s/S5cCa8MWSfyPiqx/download";
 
-fn download() -> Vec<u8> {
+fn get_table() -> Vec<u8> {
     let mut easy = Easy::new();
     easy.url(LINK).unwrap();
     let mut dst = Vec::new();
@@ -49,7 +47,7 @@ fn raw(row: &[DataType]) {
 }
 
 fn form(row: &[DataType]) {
-    for a in 0..5 {
+    for a in 0..(row.len() / 3 - 1) {
         if !row[a * 3 + 2].is_empty() {
             let t = row[a * 3].to_string().replace(" ", "");
             let time = if let &[194u8, 160u8] = &t[..].as_bytes()[..] {
@@ -76,47 +74,55 @@ fn form(row: &[DataType]) {
     }
 }
 
+fn show_list_groups(rows: Rows<DataType>) {
+    for row in rows {
+
+    }
+}
+
+fn show_groups(rows: Rows<DataType>, groups: &Vec<String>) {
+    for row in rows {
+        if row[0].to_string().trim().contains("Расписание занятий на") {
+            // let split = row[0].to_string().trim();
+            println!("\n{}", row[0]);
+        }
+        for group in groups.iter() {
+            if row[0].to_string().trim() == group.as_str() {
+                println!("[{}]", row[0]);
+                let r = &row[1..];
+                // dbg!(row.len());
+                if r.len() % 3 != 0 {
+                    raw(&row[1..]);
+                } else {
+                    form(&row[1..]);
+                }
+            }
+        }
+    }
+}
+
 fn main() {
-    let down = std::io::Cursor::new(download());
-
-    let reader = BufReader::new(down);
-
     let args = Args::parse();
 
-    let show_groups = args.show;
+    let down = std::io::Cursor::new(get_table());
+    let reader = BufReader::new(down);
 
-    let time = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap();
+    // let time = std::time::SystemTime::now()
+    //     .duration_since(std::time::UNIX_EPOCH)
+    //     .unwrap();
 
     println!("from: {LINK}");
-    println!("dumped: {time:?}");
-
-    // https://doc.rust-lang.org/std/time/index.html
-    // add speed
+    // println!("dumped: {time:?}");
 
     let mut excel: Xlsx<_> = open_workbook_from_rs(reader).unwrap();
     for i in excel.worksheets() {
-
         if let Some(Ok(r)) = excel.worksheet_range(i.0.as_str()) {
             let rows = r.rows();
             // dbg!(rows.len());
-            for row in rows {
-                if row[0].to_string().trim().contains("Расписание занятий на") {
-                    println!("\n{}", row[0]);
-                }
-                for group in show_groups.iter() {
-                    if row[0].to_string().trim() == group.as_str() {
-                        println!("[{}]", row[0]);
-                        let r = &row[1..];
-                        // dbg!(row.len());
-                        if r.len() % 3 != 0 {
-                            raw(&row[1..]);
-                        } else {
-                            form(&row[1..]);
-                        }
-                    }
-                }
+            if args.groups.len() == 0 {
+                show_list_groups(rows);
+            } else {
+                show_groups(rows, &args.groups);
             }
         }
     }
