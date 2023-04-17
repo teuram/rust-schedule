@@ -44,7 +44,7 @@ fn raw(row: &[DataType]) {
 }
 
 fn form(row: &[DataType]) {
-    for a in 0..(row.len() / 3 - 1) {
+    for a in 0..(row.len() / 3) {
         if !row[a * 3 + 2].is_empty() {
             let t = row[a * 3].to_string().replace(" ", "");
             let time = if let &[194u8, 160u8] = &t[..].as_bytes()[..] {
@@ -66,6 +66,10 @@ fn form(row: &[DataType]) {
             if sp.len() == 2 {
                 print!("[{}] -> ", a + 1);
                 println!("{} -> {} / {}\n\t{}\n", time.trim(), room.trim(), sp[1].trim(), sp[0].trim());
+            }
+            if sp.len() == 1 {
+                print!("[{}] -> ", a + 1);
+                println!("{} -> {}\n\t{}\n", time.trim(), room.trim(), sp[0].trim());
             }
         }
     }
