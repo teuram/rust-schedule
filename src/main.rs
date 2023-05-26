@@ -43,34 +43,42 @@ fn raw(row: &[DataType]) {
     println!("");
 }
 
+fn trim(text: String) -> String {
+    if let &[194u8, 160u8] = &text[..].as_bytes()[..] {
+        "None".to_owned()
+    } else {
+        text
+    }
+}
+
 fn form(row: &[DataType]) {
     for a in 0..(row.len() / 3) {
         if !row[a * 3 + 2].is_empty() {
-            let t = row[a * 3].to_string().replace(" ", "");
-            let time = if let &[194u8, 160u8] = &t[..].as_bytes()[..] {
-                "None".to_owned()
-            } else {
-                t
-            };
-            let r = row[a * 3 + 1].to_string();
-            let room = if let &[194u8, 160u8] = &r[..].as_bytes()[..] {
-                "None".to_owned()
-            } else {
-                r
-            };
-            let t = row[a * 3 + 2].to_string();
-            let sp = t.split("/").collect::<Vec<_>>();
+            let (lesson, teather) = {
+                let lesson_raw = row[a * 3 + 2].to_string();
+                let lesson_raw = lesson_raw.split("/").collect::<Vec<_>>();
 
-            // println!("{:?}", time.bytes());
-            // println!("{:?}", room.bytes());
-            if sp.len() == 2 {
-                print!("[{}] -> ", a + 1);
-                println!("{} -> {} / {}\n\t{}\n", time.trim(), room.trim(), sp[1].trim(), sp[0].trim());
-            }
-            if sp.len() == 1 {
-                print!("[{}] -> ", a + 1);
-                println!("{} -> {}\n\t{}\n", time.trim(), room.trim(), sp[0].trim());
-            }
+                if lesson_raw.len() != 2 {
+                    // ("".to_owned(), "".to_owned())
+                    continue;
+                } else {
+                    (lesson_raw[0].trim().to_owned(),
+                    lesson_raw[1].trim().to_owned())
+                }
+            };
+
+            let time = {
+                let time_raw = row[a * 3].to_string().replace(" ", "");
+                trim(time_raw).trim().to_owned()
+            };
+
+            let room = {
+                let room_raw = row[a * 3 + 1].to_string();
+                trim(room_raw).trim().to_owned()
+            };
+
+
+            println!("[{}] -> {time} -> {room} / {teather}\n\t{lesson}\n", a + 1);
         }
     }
 }
@@ -92,17 +100,15 @@ fn show_list_groups(rows: Rows<DataType>) {
     }
 }
 
-fn show_groups(rows: Rows<DataType>, groups: &Vec<String>) {
+fn show_schedule(rows: Rows<DataType>, groups: &Vec<String>) {
     for row in rows {
         if row[0].to_string().trim().contains("Расписание занятий на") {
-            // let split = row[0].to_string().trim();
             println!("\n{}", row[0]);
         }
         for group in groups.iter() {
             if row[0].to_string().trim() == group.as_str() {
                 println!("[{}]", row[0]);
                 let r = &row[1..];
-                // dbg!(row.len());
                 if r.len() % 3 != 0 {
                     raw(&row[1..]);
                 } else {
@@ -119,13 +125,6 @@ fn main() {
     let down = std::io::Cursor::new(get_table());
     let reader = BufReader::new(down);
 
-    // let time = std::time::SystemTime::now()
-    //     .duration_since(std::time::UNIX_EPOCH)
-    //     .unwrap();
-
-    println!("from: {LINK}");
-    // println!("dumped: {time:?}");
-
     let mut excel: Xlsx<_> = open_workbook_from_rs(reader).unwrap();
     for i in excel.worksheets() {
         if let Some(Ok(r)) = excel.worksheet_range(i.0.as_str()) {
@@ -134,7 +133,7 @@ fn main() {
             if args.groups.is_empty() {
                 show_list_groups(rows);
             } else {
-                show_groups(rows, &args.groups);
+                show_schedule(rows, &args.groups);
             }
         }
     }
